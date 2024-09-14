@@ -1,34 +1,32 @@
 from fastapi import APIRouter
 from app.database.models import Player, Mensaje
 from pony.orm import db_session, select, commit
+from app.schemas.mensajes import MensajeOut, MensajeIn, MensajeDelete
 
 router = APIRouter()
 
-@router.get("/traerMensajes")
+@router.get("/traerMensajes", response_model=list[MensajeOut])
 async def mensajes():
-    # Crear un objeto en la base de datos
     with db_session():
         mensajes = select(m for m in Mensaje)[:]
-        mensajes = [{"id": m.id, "mensaje": m.mensaje, "player": m.player.username, "id_player": m.player.id } for m in mensajes]
-    return {"mensajes": mensajes}
+        mensajes = [MensajeOut(id=m.id, mensaje=m.mensaje, player=m.player.username, id_player=m.player.id) for m in mensajes]
+    return mensajes
 
-
-@router.post("/postear")
-async def publicar_mensaje(username: str, mensaje: str):
+@router.post("/postear", response_model=MensajeOut)
+async def publicar_mensaje(mensaje_in: MensajeIn):
     with db_session():
-        player = select(p for p in Player if p.username == username).first()
+        player = select(p for p in Player if p.username == mensaje_in.username).first()
         if not player:
-            player = Player(username=username)
-        Mensaje(mensaje=mensaje, player=player)
-    return {"mensaje": mensaje, "player": username}
-
+            player = Player(username=mensaje_in.username)
+        mensaje = Mensaje(mensaje=mensaje_in.mensaje, player=player)
+    return MensajeOut(id=mensaje.id, mensaje=mensaje.mensaje, player=player.username, id_player=player.id)
 
 @router.delete("/eliminarMensaje")
-async def borrar_mensajes(id: int, username: str):
+async def borrar_mensajes(mensaje_delete: MensajeDelete):
     with db_session():
-        player = select(p for p in Player if p.username == username).first()
+        player = select(p for p in Player if p.username == mensaje_delete.username).first()
         if player:
-            mensajes = select(m for m in Mensaje if m.id == id and m.player == player)[:]
+            mensajes = select(m for m in Mensaje if m.id == mensaje_delete.id and m.player == player)[:]
             for mensaje in mensajes:
                 mensaje.delete()
                 commit()
