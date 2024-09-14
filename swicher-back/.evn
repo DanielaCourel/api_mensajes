@@ -1,0 +1,4 @@
+# Este archivo está diseñado para tener las variables de entorno necesarias para el proyecto
+
+APP_NAME="El Switcher"
+DEBUG=True
