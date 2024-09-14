@@ -3,8 +3,21 @@ from app.routes import game, mensajes, player
 from app.core.websocket import websocket_handler
 from app.database.session import config_database
 from fastapi.websockets import WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Inicializando la base de datos
 config_database(test=False)
